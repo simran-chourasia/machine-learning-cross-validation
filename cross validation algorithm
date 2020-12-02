@@ -1,0 +1,145 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.svm import SVR
+from sklearn.preprocessing import StandardScaler
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.metrics import accuracy_score
+
+data = pd.read_csv("/home/simran/academics/9th_sem/machine learning/project/cubic all dataset1.csv")
+#print(data)
+feature=data.iloc[0:140,1:10].values
+a=data.iloc[0:140,10:11].values
+#print (feature, a, "shape:", feature.shape, a.shape)
+
+st_x=StandardScaler()
+st_y=StandardScaler()
+XX=st_x.fit_transform(feature)
+YY=st_y.fit_transform(a)
+
+test_ratio=1/7
+X, XX_test, Y, YY_test = train_test_split(XX, YY, test_size = test_ratio)
+print(X.shape, Y.shape)
+
+size=10
+C=np.zeros(size, dtype=float)
+eps=np.zeros(size, dtype=float)
+gamm=np.zeros(size, dtype=float)
+
+inc=1
+finc=1000.0
+stepc=(finc-inc)/size
+
+ineps=0.00
+fineps=10
+stepeps=(fineps-ineps)/size
+
+ingamm=10**-10
+fingamm=10
+stepgamm=(fingamm-ingamm)/size
+
+eps[0]=ineps
+i=1
+while(i<size):
+    eps[i]=eps[i-1]+stepeps
+    i+=1
+#print("eps[",size-1,"]=",eps[size-1])
+C[0]=inc
+i=1
+while(i<size):
+    C[i]=C[i-1]+stepc
+    i+=1
+#print("C[",size,"]=",C[size-1])
+
+gamm[0]=ingamm
+i=1
+while(i<size):
+    gamm[i]=gamm[i-1]+stepgamm
+    i+=1
+
+KK=6
+step_cv=20
+x_train=np.zeros((KK,100,9), dtype=float)
+y_train=np.zeros((KK,100),dtype=float)
+x_test=np.zeros((KK,20,9), dtype=float)
+y_test=np.zeros((KK,20), dtype=float)
+
+part=[0, 20, 40, 60, 80, 100]
+l=0
+while(l<KK):
+    i=part[l]
+    k=0
+    while(i<part[l]+step_cv):
+        j=0
+        while(j<9):
+            x_test[0][k][j]=X[i][j]
+            j+=1
+        y_test[0][k]=Y[i]
+        i+=1
+        k+=1
+    i=0
+    k=0
+    while(i<part[l]):
+        j=0
+        while(j<9):
+            x_train[0][k][j]=X[i][j]
+            j+=1
+        y_train[0][k]=Y[i]
+        i+=1
+        k+=1
+    i=part[l]+step_cv
+    while(i<120):
+        j=0
+        while(j<9):
+            x_train[0][k][j]=X[i][j]
+            j+=1
+        y_train[0][k]=Y[i]
+        i+=1
+        k+=1
+    l+=1
+        
+#print(x_train)
+
+C_opt=C[0]
+eps_opt=eps[0]
+gamm_opt=gamm[0]
+mean_rms=1
+rms=np.zeros(KK, dtype=float)
+
+gind=0
+while(gind<size):
+    i=0
+    while(i<size):
+        j=0
+        while(j<size):
+            l=0
+            while(l<KK):
+                model=SVR(kernel='rbf', gamma=gamm[gind], C=C[i], epsilon=eps[j])
+                model.fit(x_train[l], y_train[l].ravel())
+                y_pred=model.predict(x_test[l])
+                y_pred = st_y.inverse_transform(y_pred)
+                y_test1 = st_y.inverse_transform(y_test[l])
+                rms[l]=(np.mean(((y_pred-y_test1)/y_test1)**2))**0.5
+                l+=1
+            mean_rms1=np.mean(rms)
+            if(mean_rms1<mean_rms):
+                mean_rms=mean_rms1
+                C_opt=C[i]
+                eps_opt=eps[j]
+                gamm_opt=gamm[gind]
+            j+=1
+        i+=1
+    gind+=1
+print(l,i, j, gind, "/////")    
+print("Optimal C=", C_opt, " epsilon=", eps_opt, "Gamma=", gamm_opt, " mean rms=", mean_rms*100,"%")
+
+model=SVR(kernel='rbf', gamma=gamm_opt, C=C_opt, epsilon=eps_opt)
+model.fit(X, Y.ravel())
+Y_pred=model.predict(XX_test)
+Y_pred = st_y.inverse_transform(Y_pred)
+Y_test1 = st_y.inverse_transform(YY_test)
+rms=(np.mean(((Y_pred-Y_test1)/Y_test1)**2))**0.5
+print("At optimal hyperparameters, rms =",rms*100,"%")
