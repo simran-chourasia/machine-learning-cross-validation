@@ -9,7 +9,7 @@ from math import sqrt
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.metrics import accuracy_score
 
-data = pd.read_csv("/home/simran/academics/9th_sem/machine learning/project/cubic all dataset1.csv")
+data = pd.read_csv("cubic all dataset1.csv")
 #print(data)
 feature=data.iloc[0:140,1:10].values
 a=data.iloc[0:140,10:11].values
