@@ -9,6 +9,13 @@ from math import sqrt
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.metrics import accuracy_score
 
+'''
+The data for cubic perovskites is stored in different arrays named 'feature' and 'a'.
+'feature' contains the feature vectors and 'a' contains the labels, i.e. values of the lattice constants. 
+The normalized feature vectors and labels are stored as 'XX' and 'YY' respectively. 
+They are split for training and testing. Training data are named as 'X' and 'Y'; and the testing data are named as  'XX_test' and 'YY_test'. 
+'''
+
 data = pd.read_csv("cubic all dataset1.csv")
 #print(data)
 feature=data.iloc[0:140,1:10].values
@@ -23,6 +30,9 @@ YY=st_y.fit_transform(a)
 test_ratio=1/7
 X, XX_test, Y, YY_test = train_test_split(XX, YY, test_size = test_ratio)
 print(X.shape, Y.shape)
+
+#The grid size is (size x size x size) for the grid search of (gamma, C, epsilon).
+#The arrays C, eps and gamm contains the values of the hyperparameters, C, epsilon and gamma respectively, at which the SVR model is to be evaluated.
 
 size=10
 C=np.zeros(size, dtype=float)
@@ -59,6 +69,11 @@ i=1
 while(i<size):
     gamm[i]=gamm[i-1]+stepgamm
     i+=1
+
+'''
+We will be doing KK-fold cross validation. We took KK=6.
+The data is then stored as 6 set of training data and validation data in the 3-dimensional arrays named (x_train, y_train) and (x_test, y_test) respectively.
+'''
 
 KK=6
 step_cv=20
@@ -102,6 +117,11 @@ while(l<KK):
     l+=1
         
 #print(x_train)
+
+'''
+We perform the grid search by running four loops: three for the three hyperparameters and one for the KK-fold cross validation.
+The best parameters are saved as C_opt, eps_opt and gamm_opt.
+'''
 
 C_opt=C[0]
 eps_opt=eps[0]
